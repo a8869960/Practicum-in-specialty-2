@@ -11,6 +11,7 @@ int main(int ac, char *av[])
         pthread_t *threads = new pthread_t[p];
 
         ARGS *args = new ARGS[p];
+        RES *ress = new RES[p];
 
         //Заполняем аргументы
         for(i = 0; i < p; i++)
@@ -18,11 +19,13 @@ int main(int ac, char *av[])
             args[i].filename = av[i + 1];
             args[i].m = i;
             args[i].p = p;
+            args[i].res = ress;
         }
 
+        // Создаем потоки
         for(i = 0; i < p; i++)
         {
-            if(pthread_create(threads + i, 0, process_average, args + i))
+            if(pthread_create(threads + i, 0, process_main, args + i))
             {
                 cout << "Cannot create thread " << i << endl;
                 delete[] threads;
@@ -31,45 +34,7 @@ int main(int ac, char *av[])
             }
         }
 
-        for(int i = 0; i < p; i++)
-        {
-            if(pthread_join(threads[i], 0))
-                cout << "Cannot wait thread " << i << endl;
-        }
-
-        for(int i = 0; i < p; i++)
-            if(args[i].status != io_status::success)
-            {
-                delete[] args;
-                delete[] threads;
-                return -5;
-            }
-
-        //Глобальный максимум и минимум + average
-        double min = args[0].local_min, max = args[0].local_max;
-        for(int i = 1; i < p; i++)
-        {
-            if(args[i].local_max > max)
-                max = args[i].local_max;
-            if(args[i].local_min < min)
-                min = args[i].local_min;
-        }
-
-        double average_ = (min + max) / 2;
-        for(int i = 0; i < p; i++)
-            args[i].average = average_;
-
-        for(i = 0; i < p; i++)
-        {
-            if(pthread_create(threads + i, 0, process_local_answer, args + i))
-            {
-                cout << "Cannot create thread " << i << endl;
-                delete[] threads;
-                delete[] args;
-                return -4;
-            }
-        }
-
+        //Ждем потоки
         for(int i = 0; i < p; i++)
         {
             if(pthread_join(threads[i], 0))
@@ -79,12 +44,13 @@ int main(int ac, char *av[])
         int global_result = 0;
         for(int i = 0; i < p; i++)
         {
-            if(args[i].status == io_status::success)
+            if(args[i].res[i].status == io_status::success)
                 global_result += args[i].local_result;
             else
             {
                 delete[] threads;
                 delete[] args;
+                delete[] ress;
                 return -5;
             }
         }
@@ -93,6 +59,8 @@ int main(int ac, char *av[])
 
         delete[] args;
         delete[] threads;
+        delete[] ress;
+        
 
         return 0;
     } catch (const bad_alloc& e)

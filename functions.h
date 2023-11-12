@@ -1,18 +1,18 @@
 //
 // Created by varsem on 05.11.23.
 //
-#define eps 1e-16
-
 #include <cstdio>
 #include <iostream>
+#include <pthread.h>
 
 using namespace std;
 
 int average(char *filename, double *min_, double *max_);
-void *process_average(void *args);
-
 int local_answer(char* filename, double average);
-void *process_local_answer(void* args);
+
+void *process_main(void *args);
+
+void reduce_sum(int p, double* a = nullptr, int n = 0);
 
 enum class io_status
 {
@@ -22,6 +22,15 @@ enum class io_status
     none
 };
 
+class RES
+{
+public:
+    io_status status = io_status::none;
+
+    double local_min = 0;
+    double local_max = 0;
+};
+
 class ARGS
 {
 public:
@@ -29,10 +38,7 @@ public:
     int m = 0;
     int p = 0;
 
-    double local_min = 0;
-    double local_max = 0;
-    double average = 0;
-
     int local_result = 0;
-    io_status status = io_status::none;
+    
+    RES *res = nullptr;
 };
