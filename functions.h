@@ -39,6 +39,7 @@ public:
     int p = 0;
 
     int local_result = 0;
+    bool is_empty = false;
     
     RES *res = nullptr;
 };

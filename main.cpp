@@ -55,7 +55,7 @@ int main(int ac, char *av[])
             }
         }
 
-        cout << "ANSWER: " << global_result << endl;
+        cout << "RESULT: " << global_result << endl;
 
         delete[] args;
         delete[] threads;

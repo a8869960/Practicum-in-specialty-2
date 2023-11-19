@@ -1,6 +1,6 @@
 //
 // Created by varsem on 05.11.23.
-//
+//что с пустыми?
 #include "functions.h"
 
 int average(char *filename, double *min_, double *max_)
@@ -19,7 +19,7 @@ int average(char *filename, double *min_, double *max_)
     if(fscanf(f, "%lf", &current) == -1)
     {
         fclose(f);
-        return 0;
+        return 1;
     }
 
     max = current;
@@ -103,9 +103,16 @@ void *process_main(void *args)
         case 0:
             arg->res[k].status = io_status::success;
             break;
+
+        case 1:
+            arg->res[k].status = io_status::success;
+            arg->is_empty = true;
+            break;
     }
-    
     reduce_sum(p);
+
+    if(arg->is_empty)
+        return 0;
     
     for(int i = 0; i < arg->p; i++)
             if(arg->res[i].status != io_status::success)
@@ -113,16 +120,33 @@ void *process_main(void *args)
                 return 0;
             }
             
-    double min = arg->res[0].local_min, max = arg->res[0].local_max;
-        for(int i = 1; i < p; i++)
-        {
-            if(arg->res[i].local_max > max)
-                max = arg->res[i].local_max;
-            if(arg->res[i].local_min < min)
-                min = arg->res[i].local_min;
-        }
+    double min = 0, max = 0;
+    int count = 0;
 
-        double average = (min + max) / 2;
+    for(int i = -k; i < arg->p - k; i++)
+    {
+        if((arg + i)->is_empty)
+            count++;
+        else
+        {
+            min = arg->res[i + k].local_min;
+            max = arg->res[i + k].local_max;
+        }
+    }
+
+    if(count == arg->p)
+        return 0;
+
+    for(int i = 0; i < p; i++)
+    {
+        if(arg->res[i].local_max > max and (arg - k + i)->is_empty == false)
+            max = arg->res[i].local_max;
+        if(arg->res[i].local_min < min and (arg - k + i)->is_empty == false)
+            min = arg->res[i].local_min;
+    }
+
+    double average = (min + max) / 2;
+//    cout << min << " " << max << " " << average << endl;
     
     int s = local_answer(arg->filename, average);
     
